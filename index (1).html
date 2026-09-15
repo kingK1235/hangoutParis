@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test the engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --linen:#F7F3EC; --card:#FFFFFF; --line:#E4DED2; --charcoal:#2B2622; --muted:#8A8175;
+    --sage:#6B8F71; --sage-deep:#4F6E55; --clay:#E2A16B; --neutral:#DCE3DE; --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--linen);color:var(--charcoal);font-family:'Inter',system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+  #app{max-width:520px;margin:0 auto;min-height:100vh;padding:26px 20px 60px;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;}
+  input,select,textarea{font-family:inherit;}
+  .brand{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:30px;}
+  .brand-mark{font-weight:800;font-size:18px;letter-spacing:-0.2px;}
+  .brand-mark span{color:var(--sage-deep);}
+  h1{font-weight:700;font-size:26px;line-height:1.25;margin:0 0 10px;letter-spacing:-0.3px;}
+  p.lede{font-size:14.5px;line-height:1.55;color:var(--muted);margin:0 0 26px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 20px;border-radius:10px;font-size:14.5px;font-weight:600;width:100%;}
+  .btn-primary{background:var(--sage);color:#fff;}
+  .btn-primary:disabled{opacity:0.4;}
+  .btn-outline{background:transparent;color:var(--charcoal);border:1.5px solid var(--line);}
+  .option-card{display:block;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:10px;}
+  .option-card h3{margin:0 0 4px;font-size:15.5px;font-weight:700;}
+  .option-card p{margin:0;font-size:13px;color:var(--muted);line-height:1.4;}
+  .field{margin-bottom:20px;}
+  .field label{display:block;font-size:13px;font-weight:600;margin-bottom:8px;}
+  input[type=text], input[type=datetime-local]{width:100%;background:#fff;border:1.5px solid var(--line);color:var(--charcoal);padding:12px 14px;border-radius:10px;font-size:14.5px;}
+  textarea{width:100%;background:#fff;border:1.5px solid var(--line);color:var(--charcoal);padding:12px 14px;border-radius:10px;font-size:14px;min-height:64px;resize:vertical;}
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{padding:10px 15px;border-radius:999px;border:1.5px solid var(--line);background:#fff;color:var(--charcoal);font-size:13.5px;font-weight:500;}
+  .chip.active{background:var(--sage);border-color:var(--sage);color:#fff;}
+  .people-count{display:flex;align-items:center;gap:16px;}
+  .count-btn{width:40px;height:40px;border-radius:50%;background:#fff;border:1.5px solid var(--line);font-size:18px;}
+  .count-val{font-weight:800;font-size:24px;min-width:30px;text-align:center;}
+  .loading-line{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13.5px;margin:16px 0;}
+  .spinner{width:15px;height:15px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--sage);animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .pickcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:12px;overflow:hidden;}
+  .pick-photo{width:calc(100% + 36px);margin:-16px -18px 12px;display:block;max-height:160px;object-fit:cover;background:var(--neutral);}
+  .pickcard .top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+  .src-tag{font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;}
+  .src-tag.list{background:var(--neutral);color:var(--sage-deep);}
+  .src-tag.web{background:#FCEBD8;color:#9C6321;}
+  .cat-tag{font-size:12px;color:var(--muted);}
+  .pickcard h3{font-size:19px;font-weight:800;margin:2px 0 3px;}
+  .pickcard .area{font-size:12.5px;color:var(--muted);margin-bottom:8px;}
+  .pickcard .blurb{font-size:13.5px;line-height:1.5;}
+  .pickcard .reason{font-size:12.5px;color:var(--sage-deep);border-top:1px dashed var(--line);padding-top:9px;margin-top:9px;font-weight:500;}
+  .pickcard .maps-link{font-size:12px;color:var(--muted);margin-top:8px;display:inline-block;}
+  .error-box{background:#FBEAE6;border:1px solid #E3A99A;color:#8C3D2A;padding:11px 13px;border-radius:10px;font-size:13px;margin-bottom:14px;}
+  .footnote{font-size:11.5px;color:var(--muted);margin-top:32px;line-height:1.6;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const DEFAULT_LIBRARY = [
+  {id:"marcello",name:"Marcello",category:"Restaurant",moods:["indulgent","romantic"],budget:3,area:"Saint-Germain-des-Prés",blurb:"Italian restaurant in the heart of the 6th.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/Marcello/data=!4m2!3m1!1s0x47e671d999ef51c1:0x7bf271e35a95943b"},
+  {id:"michalak",name:"Pâtisserie Michalak",category:"Pâtisserie / café",moods:["chill","indulgent"],budget:2,area:"Saint-Germain-des-Prés",blurb:"Christophe Michalak's pastry counter and tea room.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/P%C3%A2tisserie+Michalak+%7C+Saint+Germain+des+Pr%C3%A9s/data=!4m2!3m1!1s0x47e671d752c99457:0x8988ee3c3551ce0"},
+  {id:"jjhings",name:"JJ Hings Ice Cream",category:"Ice cream",moods:["chill"],budget:1,area:"Saint-Germain-des-Prés",blurb:"Casual ice cream stop, easy low-key pick.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/JJ+Hings+Ice+Cream/data=!4m2!3m1!1s0x47e66f9a82dab5af:0x95f740033f6b0387"},
+  {id:"bibie",name:"Bibie Paris",category:"Restaurant / bar",moods:["indulgent","lively"],budget:3,area:"Saint-Germain-des-Prés",blurb:"Lively dinner spot with a bar energy.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/Bibie+Paris/data=!4m2!3m1!1s0x47e671002576ba55:0x90d26bb57aff6c0c"},
+  {id:"heure-doree",name:"Le Rooftop \"L'Heure Dorée\"",category:"Rooftop bar",moods:["lively","romantic"],budget:3,area:"Paris",blurb:"Golden-hour rooftop, drinks with a view.",outdoor:true,mapsUrl:"https://www.google.com/maps/place/Le+Rooftop+%22L'Heure+Dor%C3%A9e%22/data=!4m2!3m1!1s0x47e66feeeb578d0b:0xe2dc3ac09d2b0ad2"},
+  {id:"annette-k",name:"Annette K. Seine",category:"Restaurant",moods:["romantic","indulgent"],budget:3,area:"Seine riverside",blurb:"Dinner spot along the river.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/Annette+K.+Seine/data=!4m2!3m1!1s0x47e67b6d82b8ea3f:0xa7eeea411dc04e7b"},
+  {id:"ora-farmhouse",name:"Ora Farmhouse - Pavillon du Lac",category:"Restaurant",moods:["chill","romantic","active"],budget:3,area:"Bois de Boulogne",blurb:"Lakeside farmhouse-style restaurant, green setting.",outdoor:true,mapsUrl:"https://www.google.com/maps/place/Ora+Farmhouse+-+Pavillon+du+Lac/data=!4m2!3m1!1s0x47e66d849a059edb:0x5eb79d2c1a4e97e3"},
+  {id:"petit-bal-perdu",name:"Le Petit Bal Perdu",category:"Bar / bistro",moods:["chill","lively"],budget:2,area:"Paris",blurb:"Easygoing neighbourhood bistro-bar.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/Le+Petit+Bal+Perdu/data=!4m2!3m1!1s0x47e671003706072f:0x4901ea5ae566347c"},
+  {id:"monsieur-bleu",name:"Monsieur Bleu",category:"Restaurant",moods:["celebratory","indulgent"],budget:4,area:"Palais de Tokyo, 16th",blurb:"Grand, glamorous dining room by the Palais de Tokyo.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/Monsieur+Bleu/data=!4m2!3m1!1s0x47e66fe70e106635:0x27d1b2fe5f30e98f"},
+  {id:"bontemps",name:"Bontemps La Pâtisserie",category:"Pâtisserie / tea room",moods:["chill","indulgent"],budget:2,area:"Le Marais",blurb:"Marais tea room known for its shortbread.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/Bontemps+La+P%C3%A2tisserie/data=!4m2!3m1!1s0x47e66e05c9ad7b27:0xf764e62300b267c9"},
+  {id:"rooftop-nijinsky",name:"Rooftop Nijinsky",category:"Rooftop bar",moods:["lively","celebratory"],budget:3,area:"Paris",blurb:"Rooftop bar, good for a group drink.",outdoor:true,mapsUrl:"https://www.google.com/maps/place/Rooftop+Nijinsky/data=!4m2!3m1!1s0x47e66f0b47f68207:0x80df0f0d79c2d2c8"},
+  {id:"roof-paris",name:"ROOF Paris",category:"Rooftop bar",moods:["lively","celebratory"],budget:3,area:"Paris",blurb:"Rooftop bar and lounge.",outdoor:true,mapsUrl:"https://www.google.com/maps/place/ROOF+Paris/data=!4m2!3m1!1s0x47e66f39be20255f:0x7f15667c477b1c9a"},
+  {id:"halo-paris",name:"Halo Paris",category:"Rooftop / club",moods:["lively","celebratory"],budget:3,area:"Paris",blurb:"Rooftop with a club energy after dark.",outdoor:true,mapsUrl:"https://www.google.com/maps/place/Halo+Paris/data=!4m2!3m1!1s0x47e66f0692f85135:0xd3cfbee5d3821db2"},
+  {id:"maggie",name:"Maggie",category:"Restaurant / bar",moods:["indulgent","lively"],budget:3,area:"Paris",blurb:"Dinner-into-drinks kind of spot.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/Maggie/data=!4m2!3m1!1s0x47e66f892b5c1625:0xf646f568a0e656ea"},
+  {id:"madame-reve",name:"Hôtel Madame Rêve",category:"Hotel rooftop bar",moods:["romantic","celebratory"],budget:4,area:"1st, Châtelet",blurb:"Rooftop bar with a view over the Louvre.",outdoor:true,mapsUrl:"https://www.google.com/maps/place/H%C3%B4tel+Madame+R%C3%AAve/data=!4m2!3m1!1s0x47e66fb73e2e4fc9:0x4f315c5df55e2619"},
+  {id:"terraza-mikuna",name:"Terraza Mikuna",category:"Peruvian rooftop restaurant",moods:["lively","indulgent"],budget:3,area:"Paris",blurb:"Peruvian rooftop dining.",outdoor:true,mapsUrl:"https://www.google.com/maps/place/Terraza+Mikuna/data=!4m2!3m1!1s0x47e66f32a3de3d6f:0xb728290c03cded50"},
+  {id:"fluctuart",name:"Fluctuart",category:"Art centre / bar",moods:["cultural","chill"],budget:2,area:"7th, Seine",blurb:"Floating urban-art centre with a bar on the Seine.",outdoor:true,mapsUrl:"https://www.google.com/maps/place/Fluctuart+-+Centre+d'art+urbain/data=!4m2!3m1!1s0x47e66f808d33d229:0xadb664f23d69f8be"},
+  {id:"le-mazette",name:"Le Mazette",category:"Restaurant",moods:["chill","indulgent"],budget:2,area:"Paris",blurb:"Relaxed neighbourhood restaurant.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/Le+Mazette/data=!4m2!3m1!1s0x47e673abd586ed2f:0xf63c0e02bbda0b80"},
+  {id:"off-paris-seine",name:"Off Paris Seine",category:"Floating hotel bar",moods:["romantic","lively"],budget:3,area:"Seine riverside",blurb:"Floating hotel with a bar on the water.",outdoor:true,mapsUrl:"https://www.google.com/maps/place/Off+Paris+Seine/data=!4m2!3m1!1s0x47e6721937d6dc69:0x9564f53ee0df3d4c"},
+  {id:"laia-voltaire",name:"Laïa Voltaire",category:"Restaurant",moods:["romantic","indulgent"],budget:3,area:"11th",blurb:"Neighbourhood dinner spot in the 11th.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/La%C3%AFa+Voltaire/data=!4m2!3m1!1s0x47e673498f1abc09:0x5710d81bf79b1a79"},
+  {id:"dame-des-arts",name:"Rooftop Bar Dame des Arts",category:"Rooftop bar",moods:["lively","cultural"],budget:2,area:"5th",blurb:"Rooftop above the Left Bank.",outdoor:true,mapsUrl:"https://www.google.com/maps/place/Rooftop+Bar+Dame+des+Arts/data=!4m2!3m1!1s0x47e671de46dbfcc7:0xbc7beab31d312ddf"},
+  {id:"10eme-ciel",name:"10ème Ciel",category:"Rooftop bar",moods:["lively","celebratory"],budget:3,area:"Paris",blurb:"Rooftop bar for a group.",outdoor:true,mapsUrl:"https://www.google.com/maps/place/10%C3%A8me+Ciel+-+Rooftop+Bar+Paris/data=!4m2!3m1!1s0x47e671bc8f248a53:0xf0273d133cc0c931"},
+  {id:"brasserie-gisele",name:"Brasserie Gisèle",category:"Brasserie",moods:["chill","indulgent"],budget:2,area:"Paris",blurb:"Classic brasserie fare.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/Brasserie+Gis%C3%A8le/data=!4m2!3m1!1s0x47e66e004c39a337:0xf82b6a023eed5d02"},
+  {id:"joya",name:"Joya",category:"Restaurant / bar",moods:["lively","indulgent"],budget:3,area:"Paris",blurb:"Dinner and drinks, lively room.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/Joya/data=!4m2!3m1!1s0x47e671345a644653:0xfc32096bf565d5f3"},
+  {id:"mr-chow",name:"MR CHOW",category:"Chinese restaurant",moods:["indulgent","celebratory"],budget:4,area:"Paris",blurb:"Upscale Chinese dining.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/MR+CHOW+-+Cuisine+chinoise/data=!4m2!3m1!1s0x47e6716097803bf9:0x89cd3f8cd1a99fd8"},
+  {id:"vi-hanoi",name:"Vi Hanoi",category:"Vietnamese restaurant",moods:["chill","indulgent"],budget:2,area:"Paris",blurb:"Vietnamese kitchen, easygoing.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/Vi+Hanoi/data=!4m2!3m1!1s0x47e67136bcf2edab:0xdc05d27fe6bb0b2d"},
+  {id:"silencio",name:"Silencio Club",category:"Club",moods:["lively","celebratory"],budget:3,area:"2nd",blurb:"David Lynch-designed members' club, late-night.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/Silencio+Club/data=!4m2!3m1!1s0x47e671deaa7b9475:0x82f8580db8be76b3"},
+  {id:"bazurto",name:"Bazurto",category:"Restaurant",moods:["lively","indulgent"],budget:2,area:"6th, Saint-Germain",blurb:"Colourful dinner spot in Saint-Germain.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/Bazurto/data=!4m2!3m1!1s0x47e671c4d68a9bdf:0x262fd10028af03e8"},
+  {id:"grouvie",name:"Grouvie",category:"Restaurant",moods:["chill","indulgent"],budget:2,area:"6th, Saint-Germain",blurb:"Relaxed dinner spot in Saint-Germain.",outdoor:false,mapsUrl:"https://www.google.com/maps/place/Grouvie/data=!4m2!3m1!1s0x47e671b7bcd85ac5:0x4864fcf7efd6bf56"}
+];
+const MOODS = [
+  {id:"lively",label:"Lively / social"},{id:"chill",label:"Low-key catch-up"},{id:"romantic",label:"Romantic"},
+  {id:"celebratory",label:"Celebratory"},{id:"active",label:"Active / outdoorsy"},{id:"cultural",label:"Cultural / curious"},
+  {id:"indulgent",label:"Indulgent, good food, slow pace"}
+];
+const BUDGETS = [{id:1,label:"€"},{id:2,label:"€€"},{id:3,label:"€€€"},{id:4,label:"€€€€"}];
+const MODES = [
+  {id:"list",name:"From my list",desc:"Only recommends from your list — nothing invented."},
+  {id:"surprise",name:"Surprise me",desc:"Picks freely, grounded via live web search."},
+  {id:"mix",name:"Mix",desc:"Prefers your list, fills gaps from the web if needed."}
+];
+
+const app = document.getElementById('app');
+let STATE = { mode:null, library:null, tasteProfile:null, answers:{} };
+
+async function callClaude(prompt, tools){
+  const r = await fetch('/api/claude', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({prompt, tools})
+  });
+  const data = await r.json();
+  if(data.error) throw new Error(data.error);
+  return data.content.filter(b=>b.type==="text").map(b=>b.text).join("");
+}
+async function deriveTasteProfile(library){
+  try{
+    const prompt = `Here is a curated list of venues someone personally saved:\n${JSON.stringify(library.map(v=>({name:v.name,category:v.category,area:v.area,budget:v.budget,blurb:v.blurb})))}\n\nIn 3-4 sentences, describe the taste behind this list. Be specific. Output only the description, no preamble.`;
+    const text = (await callClaude(prompt)).trim();
+    if(text) return text;
+  }catch(e){}
+  return "A mix of well-regarded spots, generally mid-to-upper budget.";
+}
+function parseTakeoutCSV(text){
+  const lines = text.split(/\r?\n/).filter(l=>l.trim().length>0);
+  const rows = [];
+  for(const line of lines){
+    const fields=[]; let cur=''; let inQuotes=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(ch==='"'){ if(inQuotes && line[i+1]==='"'){cur+='"';i++;} else inQuotes=!inQuotes; }
+      else if(ch===',' && !inQuotes){ fields.push(cur); cur=''; }
+      else cur+=ch;
+    }
+    fields.push(cur); rows.push(fields);
+  }
+  if(rows.length===0) return [];
+  const header = rows[0].map(h=>h.trim().toLowerCase());
+  const titleIdx = header.indexOf('title'); const urlIdx = header.indexOf('url');
+  if(titleIdx===-1) return [];
+  const out=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i]; const name=(r[titleIdx]||'').trim(); const url=urlIdx>=0?(r[urlIdx]||'').trim():'';
+    if(name) out.push({name, mapsUrl:url});
+  }
+  return out;
+}
+function uid(len=4){const c="ABCDEFGHJKMNPQRSTUVWXYZ23456789";let s="";for(let i=0;i<len;i++)s+=c[Math.floor(Math.random()*c.length)];return s;}
+async function enrichImportedList(rawEntries){
+  const prompt = `Here is a raw list of place names, with Google Maps links. For EACH one, in order, infer: category, 1-2 moods from [lively, chill, romantic, celebratory, active, cultural, indulgent], a budget level 1-4, a likely area, and a one-sentence blurb. Return exactly ${rawEntries.length} objects, same order, never inventing or dropping entries.\nList:\n${JSON.stringify(rawEntries.map(e=>e.name))}\n\nRespond with ONLY a raw JSON array:\n[{"category":"...","moods":["..."],"budget":1,"area":"...","blurb":"..."}]`;
+  try{
+    const text = await callClaude(prompt);
+    const parsed = JSON.parse(text.replace(/```json|```/g,"").trim());
+    if(Array.isArray(parsed) && parsed.length===rawEntries.length){
+      return rawEntries.map((e,i)=>({id:"imp-"+i+"-"+uid(),name:e.name,mapsUrl:e.mapsUrl||("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(e.name)),
+        category:parsed[i].category||"Venue",moods:Array.isArray(parsed[i].moods)&&parsed[i].moods.length?parsed[i].moods:["chill"],
+        budget:parsed[i].budget||2,area:parsed[i].area||"Unknown",blurb:parsed[i].blurb||"",outdoor:false}));
+    }
+  }catch(e){}
+  return rawEntries.map((e,i)=>({id:"imp-"+i+"-"+uid(),name:e.name,mapsUrl:e.mapsUrl||("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(e.name)),
+    category:"Venue",moods:["chill"],budget:2,area:"Unknown",blurb:"",outdoor:false}));
+}
+async function getWeatherFlag(dateStr){
+  try{
+    const target = new Date(dateStr+"T12:00:00Z");
+    const days = Math.round((target - new Date())/86400000);
+    if(days<0 || days>15) return {known:false};
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=48.8566&longitude=2.3522&daily=precipitation_probability_max,temperature_2m_max&timezone=Europe%2FParis&start_date=${dateStr}&end_date=${dateStr}`);
+    const d = await r.json();
+    const rainProb = d?.daily?.precipitation_probability_max?.[0]; const tempMax = d?.daily?.temperature_2m_max?.[0];
+    if(rainProb===undefined) return {known:false};
+    const bad = rainProb>=60 || (tempMax!==undefined && (tempMax<=3 || tempMax>=34));
+    return {known:true, bad, rainProb, tempMax};
+  }catch(e){ return {known:false}; }
+}
+async function pickVenues(mode, library, tasteProfile, answers, feedbackNote=""){
+  const moodCounts={}; const budgets=[];
+  Object.values(answers).forEach(a=>{ moodCounts[a.mood]=(moodCounts[a.mood]||0)+1; budgets.push(a.budget); });
+  const avgBudget = Math.round(budgets.reduce((a,b)=>a+b,0)/budgets.length)||2;
+  const topMood = Object.entries(moodCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||"chill";
+  const weather = answers.date ? await getWeatherFlag(answers.date) : {known:false};
+  let candidates = (library||[]).slice();
+  if(weather.known && weather.bad) candidates = candidates.filter(v=>!v.outdoor);
+  const context = {
+    answers, average_budget_level: avgBudget, mood_votes: moodCounts,
+    weather: weather.known ? {bad_weather:weather.bad, rain_probability:weather.rainProb, max_temp_c:weather.tempMax} : "unknown",
+    taste_profile: tasteProfile, feedback_on_previous_round: feedbackNote||null
+  };
+  function validate(picks, allowedIds){
+    if(!Array.isArray(picks)) return null;
+    const seen=new Set(); const out=[];
+    for(const p of picks){ if(!p||!p.id||seen.has(p.id)) continue; if(allowedIds && !allowedIds.includes(p.id)) continue; seen.add(p.id); out.push(p); if(out.length===5) break; }
+    return out.length===5?out:null;
+  }
+  try{
+    if(mode==="list"){
+      const allowedIds = candidates.map(v=>v.id);
+      const prompt = `You are matching venues for an outing (daytime or evening — don't assume "night").\nContext:\n${JSON.stringify(context)}\n\nCandidates (choose ONLY from these, by id):\n${JSON.stringify(candidates.map(v=>({id:v.id,name:v.name,category:v.category,moods:v.moods,budget:v.budget,area:v.area,blurb:v.blurb})))}\n\nPick exactly 5 distinct ids that best fit, favoring variety. Don't just match on the mood tags — reason about whether each place actually suits the practical experience of the stated mood. For a social/catch-up mood, that means somewhere people can sit and talk for a real stretch of time, not a quick grab-and-go stop (a pastry counter or ice cream window doesn't qualify even if tagged "chill"). For an active/outdoorsy mood, a place with no real activity or space to move doesn't qualify even if tagged "active". Respond with ONLY a raw JSON array:\n[{"id":"...","reason":"one specific sentence tied to a real factor"}]`;
+      const text = await callClaude(prompt);
+      const parsed = JSON.parse(text.replace(/```json|```/g,"").trim());
+      const valid = validate(parsed, allowedIds);
+      if(!valid) throw new Error("invalid picks");
+      return valid.map(p=>({...candidates.find(v=>v.id===p.id), reason:p.reason, source:"list"}));
+    }
+    if(mode==="surprise" || mode==="mix"){
+      const searchPrompt = `Find 8-10 real, currently-operating venues that fit this plan. Use web search to verify each is real and open — do not invent. Context: ${JSON.stringify(context)}. Respond with ONLY a raw JSON array:\n[{"name":"...","category":"...","area":"...","budget":1-4,"blurb":"...","mapsQuery":"..."}]`;
+      const searchText = await callClaude(searchPrompt, [{type:"web_search_20250305",name:"web_search"}]);
+      let webCandidates=[]; try{ webCandidates=JSON.parse(searchText.replace(/```json|```/g,"").trim()); }catch(e){}
+      webCandidates = webCandidates.map((v,i)=>({...v,id:"web-"+i}));
+      let pool=webCandidates; let poolMap={}; webCandidates.forEach(v=>poolMap[v.id]=v);
+      if(mode==="mix"){ candidates.forEach(v=>poolMap[v.id]=v); pool=[...candidates,...webCandidates]; }
+      const allowedIds = pool.map(v=>v.id);
+      const decidePrompt = `Choose exactly 5 distinct venues (by id) for this plan.\nContext:\n${JSON.stringify(context)}\nCandidates:\n${JSON.stringify(pool.map(v=>({id:v.id,name:v.name,category:v.category,area:v.area,budget:v.budget,blurb:v.blurb})))}\nDon't just match on mood/category labels — reason about whether each place actually suits the practical experience of the stated mood (e.g. a catch-up needs somewhere to sit and talk for a while, not a quick stop). Respond with ONLY a raw JSON array:\n[{"id":"...","reason":"..."}]`;
+      const decideText = await callClaude(decidePrompt);
+      const parsed = JSON.parse(decideText.replace(/```json|```/g,"").trim());
+      const valid = validate(parsed, allowedIds);
+      if(!valid) throw new Error("invalid picks");
+      return valid.map(p=>{
+        const v=poolMap[p.id]; const fromList = v && candidates.find(l=>l.id===v.id);
+        return {id:p.id,name:v.name,category:v.category,area:v.area,budget:v.budget,blurb:v.blurb,
+          mapsUrl: fromList?fromList.mapsUrl:("https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(v.mapsQuery||v.name)),
+          reason:p.reason, source: fromList?"list":"web"};
+      });
+    }
+  }catch(e){
+    const scored = candidates.map(v=>{ let score=0; if(v.moods.includes(topMood)) score+=3; score-=Math.abs(v.budget-avgBudget); return {...v,score,reason:`Matches "${topMood}" and the budget level.`,source:"list"}; }).sort((a,b)=>b.score-a.score);
+    return scored.slice(0,5);
+  }
+}
+
+function renderHome(){
+  app.innerHTML = `
+    <div class="brand"><div class="brand-mark">Engine <span>test</span></div></div>
+    <h1>Test the matching engine</h1>
+    <p class="lede">No accounts, nothing saved — answer a few questions, see what it recommends, judge for yourself.</p>
+    <button class="btn btn-primary" id="startBtn">Start</button>
+  `;
+  document.getElementById('startBtn').onclick = renderModeSelect;
+}
+function renderModeSelect(){
+  app.innerHTML = `
+    <div class="brand"><div class="brand-mark">Engine <span>test</span></div></div>
+    <h1>How should it match?</h1>
+    ${MODES.map(m=>`<button class="option-card" data-mode="${m.id}"><h3>${m.name}</h3><p>${m.desc}</p></button>`).join('')}
+  `;
+  [...document.querySelectorAll('.option-card')].forEach(el=>{
+    el.onclick = ()=>{
+      STATE.mode = el.dataset.mode;
+      if(STATE.mode==="surprise") renderQuestions();
+      else renderLibrarySetup();
+    };
+  });
+}
+function renderLibrarySetup(){
+  app.innerHTML = `
+    <div class="brand"><div class="brand-mark">Engine <span>test</span></div></div>
+    <h1>Which list should this use?</h1>
+    <button class="option-card" id="starterBtn"><h3>Use the starter list</h3><p>29 curated Paris spots.</p></button>
+    <button class="option-card" id="importBtn"><h3>Import your own list</h3><p>Paste your own Google Maps list.</p></button>
+  `;
+  document.getElementById('starterBtn').onclick = async ()=>{
+    STATE.library = DEFAULT_LIBRARY;
+    app.innerHTML = `<div class="brand"><div class="brand-mark">Engine <span>test</span></div></div><div class="loading-line"><span class="spinner"></span> Reading your list's taste…</div>`;
+    STATE.tasteProfile = await deriveTasteProfile(DEFAULT_LIBRARY);
+    renderQuestions();
+  };
+  document.getElementById('importBtn').onclick = renderImportScreen;
+}
+function renderImportScreen(){
+  app.innerHTML = `
+    <div class="brand"><div class="brand-mark">Engine <span>test</span></div></div>
+    <h1>Import your list</h1>
+    <p class="lede">Works fine on a phone browser:</p>
+    <div class="card">
+      <p style="font-size:13px;line-height:1.6;margin:0;">
+        1. Go to <strong>takeout.google.com</strong>, signed into the account with your list<br>
+        2. Tap <strong>Deselect all</strong><br>
+        3. Tick <strong>"Maps (your places)"</strong> and <strong>"Saved (your lists)"</strong><br>
+        4. Tap <strong>Next step</strong> → <strong>.zip</strong> → <strong>Export once</strong> → <strong>Create export</strong><br>
+        5. Open the download, unzip it — you'll find a folder <strong>Takeout → Saved</strong> with a .csv file for each list<br>
+        6. Upload that .csv file below
+      </p>
+    </div>
+    <div id="err"></div>
+    <div class="field">
+      <label>Your list's CSV file</label>
+      <input type="file" id="csvFile" accept=".csv,text/csv">
+    </div>
+    <button class="btn btn-primary" id="useListBtn">Use this list</button>
+    <button class="btn btn-outline" id="backBtn" style="margin-top:8px;">Back</button>
+  `;
+  document.getElementById('backBtn').onclick = renderLibrarySetup;
+  document.getElementById('useListBtn').onclick = async ()=>{
+    const fileInput = document.getElementById('csvFile');
+    const errBox = document.getElementById('err');
+    const file = fileInput.files && fileInput.files[0];
+    if(!file){
+      errBox.innerHTML = `<div class="error-box">Choose a .csv file first — it's inside Takeout → Saved after you unzip the download.</div>`;
+      return;
+    }
+    const btn = document.getElementById('useListBtn');
+    btn.disabled = true; btn.textContent = "Reading file…";
+    let raw;
+    try{
+      raw = await file.text();
+    }catch(e){
+      errBox.innerHTML = `<div class="error-box">Couldn't read that file — make sure it's the .csv from Takeout → Saved.</div>`;
+      btn.disabled = false; btn.textContent = "Use this list";
+      return;
+    }
+    const parsed = parseTakeoutCSV(raw);
+    if(parsed.length===0){
+      errBox.innerHTML = `<div class="error-box">Couldn't find any places in that file — make sure it's the right .csv, with its header row intact.</div>`;
+      btn.disabled = false; btn.textContent = "Use this list";
+      return;
+    }
+    btn.textContent = `Reading ${parsed.length} places…`;
+    try{
+      const enriched = await enrichImportedList(parsed);
+      const tasteProfile = await deriveTasteProfile(enriched);
+      STATE.library = enriched; STATE.tasteProfile = tasteProfile;
+      renderQuestions();
+    }catch(e){
+      errBox.innerHTML = `<div class="error-box">Something went wrong reading that list — try again.</div>`;
+      btn.disabled = false; btn.textContent = "Use this list";
+    }
+  };
+}
+function renderQuestions(){
+  app.innerHTML = `
+    <div class="brand"><div class="brand-mark">Engine <span>test</span></div></div>
+    <h1>Quick questions</h1>
+    <p class="lede">Answer as if this were a real plan.</p>
+    <div id="err"></div>
+    <div class="field"><label>How many people?</label>
+      <div class="people-count"><button class="count-btn" id="dec">–</button><div class="count-val" id="countVal">4</div><button class="count-btn" id="inc">+</button></div>
+    </div>
+    <div class="field"><label>Date &amp; time</label><input type="datetime-local" id="q_datetime"></div>
+    <div class="field"><label>Mood</label>
+      <div class="chip-row" id="moodRow">${MOODS.map(m=>`<button class="chip" data-mood="${m.id}">${m.label}</button>`).join('')}</div>
+      <textarea id="q_moodExtra" placeholder="Anything more specific? (optional)" style="margin-top:10px;"></textarea>
+    </div>
+    <div class="field"><label>Budget per person</label>
+      <div class="chip-row" id="budgetRow">${BUDGETS.map(b=>`<button class="chip" data-budget="${b.id}">${b.label}</button>`).join('')}</div>
+    </div>
+    <div class="field"><label>Preferred area / where you're coming from</label><input type="text" id="q_area" placeholder="e.g. near Bastille"></div>
+    <button class="btn btn-primary" id="submitBtn">Get my picks</button>
+  `;
+  let count=4, mood=null, budget=null;
+  document.getElementById('dec').onclick=()=>{count=Math.max(1,count-1);document.getElementById('countVal').textContent=count;};
+  document.getElementById('inc').onclick=()=>{count=Math.min(20,count+1);document.getElementById('countVal').textContent=count;};
+  document.getElementById('moodRow').onclick=(e)=>{const b=e.target.closest('.chip');if(!b)return;[...document.getElementById('moodRow').children].forEach(c=>c.classList.remove('active'));b.classList.add('active');mood=b.dataset.mood;};
+  document.getElementById('budgetRow').onclick=(e)=>{const b=e.target.closest('.chip');if(!b)return;[...document.getElementById('budgetRow').children].forEach(c=>c.classList.remove('active'));b.classList.add('active');budget=parseInt(b.dataset.budget);};
+  const now=new Date(); now.setMinutes(0); document.getElementById('q_datetime').value = now.toISOString().slice(0,16);
+
+  document.getElementById('submitBtn').onclick = async ()=>{
+    const dt=document.getElementById('q_datetime').value;
+    const area=document.getElementById('q_area').value.trim();
+    const moodExtra=document.getElementById('q_moodExtra').value.trim();
+    const errBox=document.getElementById('err');
+    if(!dt||!mood||!budget||!area){ errBox.innerHTML=`<div class="error-box">Fill in date/time, mood, budget and area.</div>`; return; }
+    const [date,time] = dt.split('T');
+    STATE.answers = {size:count, date, time, mood, moodExtra, budget, area};
+    renderGenerating();
+  };
+}
+async function resolvePlaceInfo(v){
+  // Already baked in (e.g. the starter list, resolved once via the ?resolve=1 utility) — no API call needed.
+  if (v.photoRef !== undefined || v.rating !== undefined){
+    return { photoRef: v.photoRef || null, rating: v.rating || null, userRatingsTotal: v.userRatingsTotal || null };
+  }
+  try{
+    const r = await fetch('/api/place-info?query=' + encodeURIComponent(v.name + ', ' + (v.area || 'Paris')));
+    const data = await r.json();
+    if (data.error) return { photoRef: null, rating: null, userRatingsTotal: null };
+    return data;
+  }catch(e){
+    return { photoRef: null, rating: null, userRatingsTotal: null };
+  }
+}
+async function renderGenerating(feedbackNote){
+  app.innerHTML = `<div class="brand"><div class="brand-mark">Engine <span>test</span></div></div><h1>Finding picks</h1><div class="loading-line"><span class="spinner"></span> Checking weather, matching…</div>`;
+  try{
+    const picks = await pickVenues(STATE.mode, STATE.library, STATE.tasteProfile, STATE.answers, feedbackNote);
+    const enriched = await Promise.all(picks.map(async p => ({...p, ...(await resolvePlaceInfo(p))})));
+    STATE.picks = enriched;
+    renderResults();
+  }catch(e){
+    app.innerHTML += `<div class="error-box">Something went wrong: ${e.message}</div><button class="btn btn-primary" id="retryBtn">Try again</button>`;
+    document.getElementById('retryBtn').onclick = ()=>renderGenerating(feedbackNote);
+  }
+}
+function renderResults(){
+  app.innerHTML = `
+    <div class="brand"><div class="brand-mark">Engine <span>test</span></div></div>
+    <h1>Here's what it picked</h1>
+    <p class="lede">Mode: <strong>${MODES.find(m=>m.id===STATE.mode)?.name}</strong></p>
+    ${STATE.picks.map(v=>`
+      <div class="pickcard">
+        ${v.photoRef ? `<img class="pick-photo" src="/api/place-photo?ref=${encodeURIComponent(v.photoRef)}" alt="${v.name}" loading="lazy" onerror="this.style.display='none'">` : ''}
+        <div class="top"><span class="src-tag ${v.source==='list'?'list':'web'}">${v.source==='list'?'From the list':'AI found this'}</span><span class="cat-tag">${v.category}</span></div>
+        <h3>${v.name}</h3>
+        <div class="area">${v.area} · ${'€'.repeat(v.budget)}${v.rating ? ` · ★ ${v.rating}${v.userRatingsTotal ? ` (${v.userRatingsTotal})` : ''}` : ''}</div>
+        <div class="blurb">${v.blurb}</div>
+        <div class="reason">${v.reason||''}</div>
+        <a class="maps-link" href="${v.mapsUrl}" target="_blank" rel="noopener">View on Google Maps →</a>
+      </div>`).join('')}
+    <div class="card" style="margin-top:8px;">
+      <p style="font-size:13.5px;font-weight:600;margin:0 0 8px;">Not feeling these?</p>
+      <textarea id="feedbackText" placeholder="What's wrong with them?"></textarea>
+      <button class="btn btn-outline" id="regenBtn" style="margin-top:10px;">Try again with this feedback</button>
+    </div>
+    <button class="btn btn-primary" id="restartBtn" style="margin-top:14px;">Start over</button>
+  `;
+  document.getElementById('regenBtn').onclick = ()=>{
+    const feedback = document.getElementById('feedbackText').value.trim();
+    renderGenerating(feedback);
+  };
+  document.getElementById('restartBtn').onclick = ()=>{
+    STATE = { mode:null, library:null, tasteProfile:null, answers:{} };
+    renderHome();
+  };
+}
+
+async function renderResolveUtility(){
+  app.innerHTML = `
+    <div class="brand"><div class="brand-mark">Engine <span>test</span></div></div>
+    <h1>Resolve starter list photos</h1>
+    <p class="lede">One-time pass — looks up rating + photo for all 29 starter venues, so they never need a live Google lookup again.</p>
+    <div id="progress" class="loading-line"><span class="spinner"></span> Resolving 0 / ${DEFAULT_LIBRARY.length}…</div>
+    <textarea id="output" readonly style="min-height:260px;display:none;"></textarea>
+    <p class="footnote" id="doneNote" style="display:none;">Copy everything in the box above and send it back — it gets pasted into the starter library so this never runs again for these venues.</p>
+  `;
+  const results = {};
+  let done = 0;
+  for (const v of DEFAULT_LIBRARY){
+    const info = await resolvePlaceInfoRaw(v);
+    results[v.id] = info;
+    done++;
+    document.getElementById('progress').innerHTML = `<span class="spinner"></span> Resolving ${done} / ${DEFAULT_LIBRARY.length}…`;
+    await new Promise(r=>setTimeout(r,150)); // gentle pacing, avoid hammering the API
+  }
+  document.getElementById('progress').style.display = 'none';
+  const out = document.getElementById('output');
+  out.style.display = 'block';
+  out.value = JSON.stringify(results, null, 2);
+  document.getElementById('doneNote').style.display = 'block';
+}
+async function resolvePlaceInfoRaw(v){
+  try{
+    const r = await fetch('/api/place-info?query=' + encodeURIComponent(v.name + ', ' + (v.area || 'Paris')));
+    const data = await r.json();
+    if (data.error) return { photoRef: null, rating: null, userRatingsTotal: null };
+    return data;
+  }catch(e){
+    return { photoRef: null, rating: null, userRatingsTotal: null };
+  }
+}
+
+if (new URLSearchParams(location.search).get('resolve') === '1'){
+  renderResolveUtility();
+} else {
+  renderHome();
+}
+</script>
+</body>
+</html>
